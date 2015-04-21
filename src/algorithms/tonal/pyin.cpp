@@ -44,7 +44,6 @@ const char* Pyin::description = DOC("This algorithm estimates the fundamental fr
 void Pyin::configure() {
   _frameSize = parameter("frameSize").toInt();
   _sampleRate = parameter("sampleRate").toReal();
-  _tolerance = parameter("tolerance").toReal();
   _interpolate = parameter("interpolate").toBool();
 
   _yin.resize(_frameSize/2+1);
@@ -55,101 +54,23 @@ void Pyin::configure() {
   if (_tauMax <= _tauMin) {
     throw EssentiaException("Pyin: maxFrequency is lower than minFrequency, or they are too close, or they are out of the interval of detectable frequencies with respect to the specified frameSize.");
   }
-
-  _peakDetectLocal->configure("interpolate", _interpolate,
-                              "range", _frameSize/2+1,
-                              "maxPeaks", 1,
-                              "minPosition", _tauMin,
-                              "maxPosition", _tauMax,
-                              "orderBy", "position", 
-                              "threshold", -1 * _tolerance);
-
-  _peakDetectGlobal->configure("interpolate", _interpolate,
-                              "range", _frameSize/2+1,
-                              "maxPeaks", 1,
-                              "minPosition", _tauMin,
-                              "maxPosition", _tauMax,
-                              "orderBy", "amplitude");
 }
-
 
 void Pyin::compute() {
   const vector<Real>& signal = _signal.get();
   if (signal.empty()) {
     throw EssentiaException("Pyin: Cannot compute pitch detection on empty signal frame.");
   }
-  Real& pitch = _pitch.get();
-  Real& pitchConfidence = _pitchConfidence.get();
-  
+  std::vector<Real>& f0candidatesFreq = _f0candidatesFreq.get();
+  f0candidatesFreq.resize(3);
+  std::vector<Real>& f0candidatesProb = _f0candidatesProb.get();
+  f0candidatesProb.resize(3);
 
-  _yin[0] = 1.;
-
-  // Compute difference function
-  for (int tau=1; tau < (int) _yin.size(); ++tau) {
-    _yin[tau] = 0.;
-    for (int j=0; j < (int) _yin.size(); ++j) {
-      _yin[tau] += pow(signal[j] - signal[j+tau], 2);
-    }
-  }
-
-  // Compute a cumulative mean normalized difference function
-  Real sum = 0.; 
-  for (int tau=1; tau < (int) _yin.size(); ++tau) {
-    sum += _yin[tau];
-    _yin[tau] = _yin[tau] * tau / sum;
-  }
-
-  // Detect best period
-  Real period = 0.;
-  int yinMin = 0.;
-
-  // Select the local minima below the absolute threshold with the smallest 
-  // period value. Use global minimum if no minimas were found below threshold.
-
-  // invert yin values because we want to detect the minima while PeakDetection
-  // detects the maxima
-  for(int tau=0; tau < (int) _yin.size(); ++tau) {
-    _yin[tau] = -_yin[tau];
-  }
-
-  _peakDetectLocal->input("array").set(_yin);
-  _peakDetectLocal->output("positions").set(_positions);
-  _peakDetectLocal->output("amplitudes").set(_amplitudes);
-  _peakDetectLocal->compute();    
-   
-  if (_positions.size()) {
-    period = _positions[0];
-    yinMin = -_amplitudes[0];
-  }
-  else {
-    // no minima found below the threshold --> find the global minima
-    _peakDetectGlobal->input("array").set(_yin);
-    _peakDetectGlobal->output("positions").set(_positions);
-    _peakDetectGlobal->output("amplitudes").set(_amplitudes);
-    _peakDetectGlobal->compute();    
-    try {
-      period = _positions[0];
-      yinMin = -_amplitudes[0];
-    }
-    catch (const EssentiaException&) {
-      throw EssentiaException("Pyin: it appears that no peaks were found by PeakDetection. If you read this message, PLEASE, report this issue to the developers with an example of audio on which it happened.");
-    }
-  }
-
-  // NOTE: not sure if it is faster to run peak detection once to detect many 
-  // peaks and process the values manually instead of running peak detection 
-  // twice and detecting only two peaks. 
-
-  // TODO: how to compute confidence?
-  // Aubio computes it as 1 - min(_yin), but this does not correspond to the peak
-  // dound by peakDetectLocal
-
-  if (period) {
-    pitch = _sampleRate / period;
-    pitchConfidence = 1. - yinMin;
-  }
-  else {
-    pitch = 0.0;
-    pitchConfidence = 0.0;
-  }      
+    f0candidatesFreq[0] = 220.f;
+    f0candidatesFreq[1] = 440.f;
+    f0candidatesFreq[2] = 660.f;
+    
+    f0candidatesProb[0] = 0.2f;
+    f0candidatesProb[1] = 0.3f;
+    f0candidatesProb[2] = 0.5f;
 }

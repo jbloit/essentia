@@ -29,11 +29,9 @@ class Pyin : public Algorithm {
 
  private:
   Input<std::vector<Real> > _signal;
-  Output<Real> _pitch;
-  Output<Real> _pitchConfidence;
+  Output<std::vector<Real> > _f0candidatesFreq;
+  Output<std::vector<Real> > _f0candidatesProb;
 
-  Algorithm* _peakDetectLocal;
-  Algorithm* _peakDetectGlobal;
 
   std::vector<Real> _yin;         // Yin function (cumulative mean normalized difference)
   std::vector<Real> _positions;   // Yin function peak positions
@@ -42,7 +40,6 @@ class Pyin : public Algorithm {
   int _frameSize;
   Real _sampleRate;               
   bool _interpolate;  // whether to use peak interpolation
-  Real _tolerance;
   int _tauMin;
   int _tauMax;
 
@@ -50,16 +47,11 @@ class Pyin : public Algorithm {
  public:
   Pyin() {
     declareInput(_signal, "signal", "the input signal frame");
-    declareOutput(_pitch, "pitch", "detected pitch [Hz]");
-    declareOutput(_pitchConfidence, "pitchConfidence", "confidence with which the pitch was detected [0,1]");
-
-    _peakDetectLocal = AlgorithmFactory::create("PeakDetection");
-    _peakDetectGlobal = AlgorithmFactory::create("PeakDetection");
+    declareOutput(_f0candidatesFreq, "f0candidatesFreq", "candidate F0 frequencies [Hz]");
+    declareOutput(_f0candidatesProb, "f0candidatesProb", "candidate F0 probablities [0,1]");
   }
 
   ~Pyin() {
-    delete _peakDetectLocal;
-    delete _peakDetectGlobal;
   };
 
   void declareParameters() {
@@ -68,7 +60,7 @@ class Pyin : public Algorithm {
     declareParameter("minFrequency", "the minimum allowed frequency [Hz]", "(0,inf)", 20.0);
     declareParameter("maxFrequency", "the maximum allowed frequency [Hz]", "(0,inf)", 22050.0);
     declareParameter("interpolate", "enable interpolation", "{true,false}", true);
-    declareParameter("tolerance", "tolerance for peak detection", "[0,1]", 0.15);
+//    declareParameter("tolerance", "tolerance for peak detection", "[0,1]", 0.15);
     // NOTE: default tolerance value is taken from aubio yin implementation
     // https://github.com/piem/aubio/blob/master/src/pitch/pitchyin.c
   }
@@ -94,15 +86,15 @@ class Pyin : public StreamingAlgorithmWrapper {
 
  protected:
   Sink<std::vector<Real> > _signal;
-  Source<Real> _pitch;
-  Source<Real> _pitchConfidence;
+  Source<std::vector<Real> > _f0candidatesFreq;
+  Source<std::vector<Real> > _f0candidatesProb;
 
  public:
   Pyin() {
     declareAlgorithm("Pyin");
     declareInput(_signal, TOKEN, "signal");
-    declareOutput(_pitch, TOKEN, "pitch");
-    declareOutput(_pitchConfidence, TOKEN, "pitchConfidence");
+    declareOutput(_f0candidatesFreq, TOKEN, "f0candidatesFreq");
+    declareOutput(_f0candidatesProb, TOKEN, "f0candidatesProb");
   }
 };
 

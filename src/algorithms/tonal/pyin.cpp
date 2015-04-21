@@ -19,6 +19,7 @@
 
 #include "Pyin.h"
 #include "essentiamath.h"
+#include "vamp-sdk/FFT.h"
 
 using namespace std;
 using namespace essentia;

@@ -285,7 +285,7 @@ def build(ctx):
     #       library. See if there's no way to split them.
     ctx.env.INCLUDES = [ '.', 'essentia', 'essentia/scheduler', 'essentia/streaming',
                          'essentia/streaming/algorithms', 'essentia/utils',
-                         '3rdparty']
+                         '3rdparty', '3rdparty/vamp-plugin-sdk-2.4']
 
     # do not complie splineutil.cpp if we are not compiling Spline and CubicSpline
     if 'Spline' not in ctx.env.ALGOIGNORE or 'CubicSpline' not in ctx.env.ALGOIGNORE:

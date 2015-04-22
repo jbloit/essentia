@@ -80,7 +80,7 @@ void Pyin::compute() {
     
     // Prepare output vectors
     if (tempPitchProb.size() < 1) {
-        throw EssentiaException("Pyin: no f0 candidates found.");
+        E_WARNING("Pyin: no f0 candidates found for audio frame.");
     }
     
     f0candidatesFreq.resize(tempPitchProb.size());

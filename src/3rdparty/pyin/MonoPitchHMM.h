@@ -16,7 +16,7 @@
 
 #include "SparseHMM.h"
 
-#include <boost/math/distributions.hpp>
+//#include <boost/math/distributions.hpp>
 
 #include <vector>
 #include <cstdio>

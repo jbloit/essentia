@@ -80,8 +80,11 @@ void Pyin::compute() {
     
     // Prepare output vectors
     if (tempPitchProb.size() < 1) {
-        E_WARNING("Pyin: no f0 candidates found for audio frame.");
+        E_WARNING("Pyin: no f0 candidate found for audio frame. Replacing with frequency 0, probability 0.");
+        tempPitchProb.push_back(pair<double, double> (0.0, 0.0));
     }
+    
+    
     
     f0candidatesFreq.resize(tempPitchProb.size());
     f0candidatesProb.resize(tempPitchProb.size());

@@ -20,6 +20,7 @@
 #include "Pyin.h"
 #include "essentiamath.h"
 #include "vamp-sdk/FFT.h"
+#include "Yin.h"
 
 using namespace std;
 using namespace essentia;
@@ -65,8 +66,23 @@ void Pyin::compute() {
   f0candidatesFreq.resize(3);
   std::vector<Real>& f0candidatesProb = _f0candidatesProb.get();
   f0candidatesProb.resize(3);
+    
+    // rms
+    float rms = 0;
+    double *dInputBuffers = new double[int(signal.size())];
+    for (int i = 0; i < int(signal.size()); ++i) {
+        dInputBuffers[i] = signal[i];
+        rms += signal[i] * signal[i];
+    }
+    rms /= signal.size();
+    rms = sqrt(rms);
+    bool isLowAmplitude = (rms < m_lowAmp);
 
-    f0candidatesFreq[0] = 220.f;
+    Yin *m_yin = new Yin(2048, 44100.0, 0.0);
+    Yin::YinOutput yo = m_yin->process(dInputBuffers);
+    
+    
+    f0candidatesFreq[0] = yo.f0;
     f0candidatesFreq[1] = 440.f;
     f0candidatesFreq[2] = 660.f;
     

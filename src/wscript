@@ -267,6 +267,11 @@ def build(ctx):
     create_registration_cpp(algos, algoreg_path, use_streaming=True)
 
     sources = ctx.path.ant_glob('essentia/**/*.cpp')
+    
+    # include pyin sources
+    sources += ctx.path.ant_glob('3rdparty/pyin/**/*.cpp')
+    # include vamp sdk sources: they include dependencies for pyin
+    sources += ctx.path.ant_glob('3rdparty/vamp-plugin-sdk-2.4/**/*.cpp')
 
     # do not compile audiocontext.cpp if we're compiling without libav
     if 'AVCODEC' not in ctx.env.USES:

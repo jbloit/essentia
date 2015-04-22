@@ -22,6 +22,8 @@
 
 #include "algorithmfactory.h"
 
+#include "Yin.h"
+
 namespace essentia {
 namespace standard {
 
@@ -43,9 +45,29 @@ class Pyin : public Algorithm {
   int _tauMin;
   int _tauMax;
 
+#pragma mark from pyin
+    float m_fmin;
+    float m_fmax;
+    
+    mutable int m_oF0Candidates;
+    mutable int m_oF0Probs;
+    mutable int m_oVoicedProb;
+    mutable int m_oCandidateSalience;
+    mutable int m_oSmoothedPitchTrack;
+    mutable int m_oNotes;
+    
+    float m_threshDistr;
+    float m_outputUnvoiced;
+    float m_preciseTime;
+    float m_lowAmp;
+    float m_onsetSensitivity;
+    float m_pruneThresh;
+    vector<vector<pair<double, double> > > m_pitchProb;
+    vector<float> m_level;
+    
 
  public:
-  Pyin() {
+    Pyin(){
     declareInput(_signal, "signal", "the input signal frame");
     declareOutput(_f0candidatesFreq, "f0candidatesFreq", "candidate F0 frequencies [Hz]");
     declareOutput(_f0candidatesProb, "f0candidatesProb", "candidate F0 probablities [0,1]");

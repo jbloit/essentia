@@ -1,6 +1,8 @@
 
 /* Public domain FFT implementation from Don Cross. */
 
+#include <cmath>
+
 static void
 fft(unsigned int n, bool inverse,
     const double *ri, const double *ii,

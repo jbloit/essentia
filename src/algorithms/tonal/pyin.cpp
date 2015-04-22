@@ -28,33 +28,13 @@ using namespace standard;
 
 
 const char* Pyin::name = "Pyin";
-const char* Pyin::description = DOC("This algorithm estimates the fundamental frequency from a given spectrum. It is an implementation of the Yin algorithm [1] for computations in the time domain.\n"
-"\n"
-"An exception is thrown if an empty signal is provided.\n"
-"\n"
-"Please note that if \"pitchConfidence\" is zero, \"pitch\" is undefined and should not be used for other algorithms.\n"
-"Also note that a null \"pitch\" is never ouput by the algorithm and that \"pitchConfidence\" must always be checked out.\n"
-"\n"
-"References:\n"
-"  [1] De Cheveigné, A., & Kawahara, H. \"YIN, a fundamental frequency estimator\n"
-"  for speech and music. The Journal of the Acoustical Society of America,\n"
-"  111(4), 1917-1930, 2002.\n\n"
-"  [2] Pitch detection algorithm - Wikipedia, the free encyclopedia\n"
-"  http://en.wikipedia.org/wiki/Pitch_detection_algorithm");
+const char* Pyin::description = DOC("This algorithm computes F0 candidates as for an audio frame. The result is givent as an array of F0 candidates and an array of their respective probabilities. It is a wrapper for stage 1 of the pyin algorithm. \n\n See PYIN : A FUNDAMENTAL FREQUENCY ESTIMATOR USING PROBABILISTIC THRESHOLD DISTRIBUTIONS, by Mauch Matthias and Dixon Simon");
 
 void Pyin::configure() {
   _frameSize = parameter("frameSize").toInt();
   _sampleRate = parameter("sampleRate").toReal();
-  _interpolate = parameter("interpolate").toBool();
-
-  _yin.resize(_frameSize/2+1);
-
-  _tauMax = min(int(ceil(_sampleRate / parameter("minFrequency").toReal())), _frameSize/2);
-  _tauMin = min(int(floor(_sampleRate / parameter("maxFrequency").toReal())), _frameSize/2);
-
-  if (_tauMax <= _tauMin) {
-    throw EssentiaException("Pyin: maxFrequency is lower than minFrequency, or they are too close, or they are out of the interval of detectable frequencies with respect to the specified frameSize.");
-  }
+  _tuningFrequency = parameter("tuningFrequency").toReal();
+  m_yin = new Yin(_frameSize, _sampleRate);
 }
 
 void Pyin::compute() {
@@ -63,12 +43,12 @@ void Pyin::compute() {
     throw EssentiaException("Pyin: Cannot compute pitch detection on empty signal frame.");
   }
   std::vector<Real>& f0candidatesFreq = _f0candidatesFreq.get();
-  f0candidatesFreq.resize(3);
   std::vector<Real>& f0candidatesProb = _f0candidatesProb.get();
-  f0candidatesProb.resize(3);
+  
     
     // rms
     float rms = 0;
+    
     double *dInputBuffers = new double[int(signal.size())];
     for (int i = 0; i < int(signal.size()); ++i) {
         dInputBuffers[i] = signal[i];
@@ -78,15 +58,38 @@ void Pyin::compute() {
     rms = sqrt(rms);
     bool isLowAmplitude = (rms < m_lowAmp);
 
-    Yin *m_yin = new Yin(2048, 44100.0, 0.0);
-    Yin::YinOutput yo = m_yin->process(dInputBuffers);
     
+    Yin::YinOutput yo = m_yin->processProbabilisticYin(dInputBuffers);
+    delete [] dInputBuffers;
     
-    f0candidatesFreq[0] = yo.f0;
-    f0candidatesFreq[1] = 440.f;
-    f0candidatesFreq[2] = 660.f;
+    // F0 candidates
+    vector<pair<double, double> > tempPitchProb;
+    for (int iCandidate = 0; iCandidate < yo.freqProb.size(); ++iCandidate)
+    {
+        double tempPitch = 12 * std::log(yo.freqProb[iCandidate].first/_tuningFrequency)/std::log(2.) + 69;
+        if (!isLowAmplitude)
+        {
+            tempPitchProb.push_back(pair<double, double>
+                                    (tempPitch, yo.freqProb[iCandidate].second));
+        } else {
+            float factor = ((rms+0.01*m_lowAmp)/(1.01*m_lowAmp));
+            tempPitchProb.push_back(pair<double, double>
+                                    (tempPitch, yo.freqProb[iCandidate].second*factor));
+        }
+    }
     
-    f0candidatesProb[0] = 0.2f;
-    f0candidatesProb[1] = 0.3f;
-    f0candidatesProb[2] = 0.5f;
+    // Prepare output vectors
+    if (tempPitchProb.size() < 1) {
+        throw EssentiaException("Pyin: no f0 candidates found.");
+    }
+    
+    f0candidatesFreq.resize(tempPitchProb.size());
+    f0candidatesProb.resize(tempPitchProb.size());
+
+    for (int i = 0; i < tempPitchProb.size(); ++i)
+    {
+        f0candidatesFreq[i] = tempPitchProb[i].first;
+        f0candidatesProb[i] = tempPitchProb[i].second;
+    }
+
 }

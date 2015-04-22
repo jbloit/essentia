@@ -34,42 +34,17 @@ class Pyin : public Algorithm {
   Output<std::vector<Real> > _f0candidatesFreq;
   Output<std::vector<Real> > _f0candidatesProb;
 
-
-  std::vector<Real> _yin;         // Yin function (cumulative mean normalized difference)
-  std::vector<Real> _positions;   // Yin function peak positions
-  std::vector<Real> _amplitudes;  // Yin function peak amplitudes
-
   int _frameSize;
-  Real _sampleRate;               
-  bool _interpolate;  // whether to use peak interpolation
-  int _tauMin;
-  int _tauMax;
+  Real _sampleRate;
+  Real _tuningFrequency;
+  float m_lowAmp;
+  Yin *m_yin;
 
-#pragma mark from pyin
-    float m_fmin;
-    float m_fmax;
     
-    mutable int m_oF0Candidates;
-    mutable int m_oF0Probs;
-    mutable int m_oVoicedProb;
-    mutable int m_oCandidateSalience;
-    mutable int m_oSmoothedPitchTrack;
-    mutable int m_oNotes;
-    
-    float m_threshDistr;
-    float m_outputUnvoiced;
-    float m_preciseTime;
-    float m_lowAmp;
-    float m_onsetSensitivity;
-    float m_pruneThresh;
-    vector<vector<pair<double, double> > > m_pitchProb;
-    vector<float> m_level;
-    
-
  public:
     Pyin(){
     declareInput(_signal, "signal", "the input signal frame");
-    declareOutput(_f0candidatesFreq, "f0candidatesFreq", "candidate F0 frequencies [Hz]");
+    declareOutput(_f0candidatesFreq, "f0candidatesFreq", "candidate F0 frequencies [midicent]");
     declareOutput(_f0candidatesProb, "f0candidatesProb", "candidate F0 probablities [0,1]");
   }
 
@@ -79,12 +54,7 @@ class Pyin : public Algorithm {
   void declareParameters() {
     declareParameter("frameSize", "number of samples in the input frame", "[2,inf)", 2048);
     declareParameter("sampleRate", "sampling rate of the input spectrum [Hz]", "(0,inf)", 44100.);
-    declareParameter("minFrequency", "the minimum allowed frequency [Hz]", "(0,inf)", 20.0);
-    declareParameter("maxFrequency", "the maximum allowed frequency [Hz]", "(0,inf)", 22050.0);
-    declareParameter("interpolate", "enable interpolation", "{true,false}", true);
-//    declareParameter("tolerance", "tolerance for peak detection", "[0,1]", 0.15);
-    // NOTE: default tolerance value is taken from aubio yin implementation
-    // https://github.com/piem/aubio/blob/master/src/pitch/pitchyin.c
+    declareParameter("tuningFrequency", "tuning frequency for Hz to midicents conversion", "(400,500)", 440.);
   }
 
   void configure();

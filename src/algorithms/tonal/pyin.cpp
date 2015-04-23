@@ -31,20 +31,20 @@ const char* Pyin::name = "Pyin";
 const char* Pyin::description = DOC("This algorithm computes F0 candidates as for an audio frame. The result is givent as an array of F0 candidates and an array of their respective probabilities. It is a wrapper for stage 1 of the pyin algorithm. \n\n See PYIN : A FUNDAMENTAL FREQUENCY ESTIMATOR USING PROBABILISTIC THRESHOLD DISTRIBUTIONS, by Mauch Matthias and Dixon Simon");
 
 void Pyin::configure() {
-  _frameSize = parameter("frameSize").toInt();
-  _sampleRate = parameter("sampleRate").toReal();
-  _tuningFrequency = parameter("tuningFrequency").toReal();
-  m_yin = new Yin(_frameSize, _sampleRate);
+    _frameSize = parameter("frameSize").toInt();
+    _sampleRate = parameter("sampleRate").toReal();
+    _tuningFrequency = parameter("tuningFrequency").toReal();
+    m_yin = new Yin(_frameSize, _sampleRate);
 }
 
 void Pyin::compute() {
-  const vector<Real>& signal = _signal.get();
-  if (signal.empty()) {
-    throw EssentiaException("Pyin: Cannot compute pitch detection on empty signal frame.");
-  }
-  std::vector<Real>& f0candidatesFreq = _f0candidatesFreq.get();
-  std::vector<Real>& f0candidatesProb = _f0candidatesProb.get();
-  
+    const vector<Real>& signal = _signal.get();
+    if (signal.empty()) {
+        throw EssentiaException("Pyin: Cannot compute pitch detection on empty signal frame.");
+    }
+    std::vector<Real>& f0candidatesFreq = _f0candidatesFreq.get();
+    std::vector<Real>& f0candidatesProb = _f0candidatesProb.get();
+    
     
     // rms
     float rms = 0;
@@ -57,18 +57,16 @@ void Pyin::compute() {
     rms /= signal.size();
     rms = sqrt(rms);
     bool isLowAmplitude = (rms < m_lowAmp);
-
+    
     
     Yin::YinOutput yo = m_yin->processProbabilisticYin(dInputBuffers);
     delete [] dInputBuffers;
     
     // F0 candidates
     vector<pair<double, double> > tempPitchProb;
-    for (int iCandidate = 0; iCandidate < yo.freqProb.size(); ++iCandidate)
-    {
+    for (int iCandidate = 0; iCandidate < yo.freqProb.size(); ++iCandidate){
         double tempPitch = 12 * std::log(yo.freqProb[iCandidate].first/_tuningFrequency)/std::log(2.) + 69;
-        if (!isLowAmplitude)
-        {
+        if (!isLowAmplitude){
             tempPitchProb.push_back(pair<double, double>
                                     (tempPitch, yo.freqProb[iCandidate].second));
         } else {
@@ -78,21 +76,18 @@ void Pyin::compute() {
         }
     }
     
-    // Prepare output vectors
+    // Default output if no candidate is found
     if (tempPitchProb.size() < 1) {
-        E_WARNING("Pyin: no f0 candidate found for audio frame. Replacing with frequency 0, probability 1.");
-        tempPitchProb.push_back(pair<double, double> (0.0, 1.0));
+        tempPitchProb.push_back(pair<double, double> (0.0, 0.0));
     }
     
-    
-    
+    // Prepare output vectors
     f0candidatesFreq.resize(tempPitchProb.size());
     f0candidatesProb.resize(tempPitchProb.size());
-
-    for (int i = 0; i < tempPitchProb.size(); ++i)
-    {
+    
+    for (int i = 0; i < tempPitchProb.size(); ++i){
         f0candidatesFreq[i] = tempPitchProb[i].first;
         f0candidatesProb[i] = tempPitchProb[i].second;
     }
-
+    
 }

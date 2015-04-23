@@ -29,46 +29,49 @@ const char* PitchTracker::name = "PitchTracker";
 const char* PitchTracker::description = DOC("This algorithm creates a pitch track from a set of F0 candidates arrays, using an HMM. It is a wrapper for stage 2 of the pyin algorithm. \n\n See PYIN : A FUNDAMENTAL FREQUENCY ESTIMATOR USING PROBABILISTIC THRESHOLD DISTRIBUTIONS, by Mauch Matthias and Dixon Simon");
 
 void PitchTracker::configure() {
-//  _frameSize = parameter("frameSize").toInt();
-//  _sampleRate = parameter("sampleRate").toReal();
-//  _tuningFrequency = parameter("tuningFrequency").toReal();
-//  m_yin = new Yin(_frameSize, _sampleRate);
+    m_outputUnvoiced = parameter("outputUnvoiced").toBool();
 }
 
 void PitchTracker::compute() {
-
-  vector<vector<Real> > f0candidatesFreq = _f0candidatesFreq.get();
-  vector<vector<Real> > f0candidatesProb = _f0candidatesProb.get();
-
-  int numberOfFrames = f0candidatesFreq.size();
+    
+    vector<vector<Real> > f0candidatesFreq = _f0candidatesFreq.get();
+    vector<vector<Real> > f0candidatesProb = _f0candidatesProb.get();
+    
+    int numberOfFrames = f0candidatesFreq.size();
     if (numberOfFrames < 1){
         throw EssentiaException("PitchTracker: Cannot compute pitch detection on empty pitch candidates matrix.");
     }
-  
-  // output vector
-  std::vector<Real>& pitchTrack = _pitchTrack.get();
-  
-  // Reshape input vectors to comply with the input format needed by the HMM.
-  // TODO: it's probably a lot more efficient not to reshape, and to adapt the HMM decoding flow instead.
-  // but right now we're only evaluating the overall method viability. Let's optimize only if we indeed get good results.
-  vector<pair<double, double> > tempPitchProb;
-  for (int i = 0; i < numberOfFrames; i++) {
+    
+    // output vector
+    std::vector<Real>& pitchTrack = _pitchTrack.get();
+    
+    // Reshape input vectors to comply with the input format needed by the HMM.
+    // TODO: it's probably a lot more efficient not to reshape, and to adapt the HMM decoding flow instead.
+    // but right now we're only evaluating the overall method viability. Let's optimize only if we indeed get good results.
+    vector<pair<double, double> > tempPitchProb;
+    for (int i = 0; i < numberOfFrames; i++) {
         int numberOfCandidates = f0candidatesFreq[i].size();
         tempPitchProb.clear();
         for (int j = 0; j < numberOfCandidates; j++){
             tempPitchProb.push_back(pair<double, double> (f0candidatesFreq[i][j], f0candidatesProb[i][j]));
         }
         m_pitchProb.push_back(tempPitchProb);
-  }
-   E_INFO("PitchTracker: Copied " << m_pitchProb.size() << " frames from input matrix.");
-
+    }
+    
     // do the actual pitch tracking
-    vector<float> mpOut = pitchHmm.process(m_pitchProb);
-  
+    vector<float> mpOut = _pitchHmm.process(m_pitchProb);
+    
     // prepare output
     pitchTrack.clear();
-    pitchTrack.resize(numberOfFrames);
+    pitchTrack.resize(mpOut.size());
     for (int iFrame = 0; iFrame < mpOut.size(); ++iFrame){
-        pitchTrack.push_back(fabs(mpOut[iFrame]));
+        if (mpOut[iFrame] < 0 && (!m_outputUnvoiced)) continue;
+        if (m_outputUnvoiced)
+        {
+            pitchTrack[iFrame]=(fabs(mpOut[iFrame]));
+        } else {
+            pitchTrack[iFrame]=(mpOut[iFrame]);
+        }
     }
+    
 }

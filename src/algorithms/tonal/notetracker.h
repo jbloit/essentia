@@ -21,7 +21,6 @@
 #define ESSENTIA_NOTETRACKER_H
 
 #include "algorithmfactory.h"
-#include "MonoPitch.h"
 
 namespace essentia {
     namespace standard {
@@ -35,10 +34,10 @@ namespace essentia {
             Output<std::vector<Real> > _noteOnsets;
             Output<std::vector<Real> > _noteDurations;
             
-            std::vector<std::vector<std::pair<double, double> > > m_pitchProb;
-            MonoPitch _pitchHmm;
-            bool m_outputUnvoiced;
-            
+            int   _hopSize;
+            Real  _sampleRate;
+            float _pruneThresh;
+            float _onsetSensitivity;
         public:
             NoteTracker(){
                 declareInput(_pitchTrack, "pitchTrack", "the input pitch track");
@@ -52,6 +51,8 @@ namespace essentia {
             };
             
             void declareParameters() {
+                declareParameter("hopSize", "frame hop size", "[2,inf)", 256);
+                declareParameter("sampleRate", "sampling rate of the input spectrum [Hz]", "(0,inf)", 44100.);
             }
             
             void configure();

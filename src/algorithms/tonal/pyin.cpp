@@ -17,7 +17,7 @@
  * version 3 along with this program.  If not, see http://www.gnu.org/licenses/
  */
 
-#include "Pyin.h"
+#include "pyin.h"
 #include "essentiamath.h"
 #include "vamp-sdk/FFT.h"
 #include "Yin.h"

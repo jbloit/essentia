@@ -17,7 +17,7 @@
  * version 3 along with this program.  If not, see http://www.gnu.org/licenses/
  */
 
-#include "NoteTracker.h"
+#include "notetracker.h"
 #include "essentiamath.h"
 #include "MonoNote.h"
 

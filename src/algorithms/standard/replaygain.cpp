@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -27,6 +27,7 @@ namespace essentia {
 namespace standard {
 
 const char* ReplayGain::name = "ReplayGain";
+const char* ReplayGain::category = "Loudness/dynamics";
 const char* ReplayGain::description = DOC("This algorithm returns the Replay Gain loudness value of the audio. The algorithm is described in detail at [1]. The value returned is the 'standard' ReplayGain value, not the value with 6dB preamplification as it is computed by lame, mp3gain, vorbisgain, and all widely used ReplayGain programs.\n"
 "\n"
 "This algorithm is only defined for input signals which size is larger than 0.05ms, otherwise an exception will be thrown.\n"
@@ -109,11 +110,9 @@ ReplayGain::ReplayGain() : _applyEqloud(false) {
   AlgorithmFactory& factory = AlgorithmFactory::instance();
 
   _eqloud   = factory.create("EqualLoudness");
-
   _fc       = factory.create("FrameCutter",
                              "silentFrames", "noise",
                              "startFromZero", true);
-
   _instantp = factory.create("InstantPower");
 
   // _applyEqloud = false at construction time, do not connect the _eqloud algorithm
@@ -140,16 +139,15 @@ void ReplayGain::configure() {
   // use a 50ms window
   _fc->configure("frameSize", int(0.05 * sampleRate),
                  "hopSize", int(0.05 * sampleRate));
-
+  delete _network;
 
   // NOTE: as _signal is a proxy, we don't need to detach it before re-attaching it,
   //       but it will give us a warning... So better do things explicitly!
   _signal.detach();
+
   // as _eqloud might have been connected to _fc before, we need to disconnect them
-  // NOTE: we could also have used any of those solutions:
-  //  - disconnect(_eqloud->output("signal"), _fc->input("signal"));
-  //  - disconnect(_eqloud, _fc);
-  _eqloud->disconnectAll();
+  // NOTE: _eqloud->disconnectAll() fails with segfault
+  disconnect(_eqloud->output("signal"), _fc->input("signal"));
 
   if (_applyEqloud) {
     // reattach the input signal SinkProxy to our _eqloud algorithm
@@ -157,17 +155,17 @@ void ReplayGain::configure() {
     _eqloud->output("signal")  >>  _fc->input("signal");
 
     _eqloud->configure("sampleRate", sampleRate);
+    _network = new scheduler::Network(_eqloud, false);
   }
   else {
     // reattach the input signal SinkProxy directly to the frame cutter
     _signal  >>  _fc->input("signal");
+    _network = new scheduler::Network(_fc, false);
   }
-
-  delete _network;
-  _network = new scheduler::Network(_fc, false);
 }
 
 AlgorithmStatus ReplayGain::process() {
+
   if (!shouldStop()) return PASS;
 
   // it's our pool, so it doesn't matter that we change the order of the values inside

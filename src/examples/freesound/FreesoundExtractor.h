@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -55,8 +55,7 @@ using namespace streaming;
  	Pool stats;
 
  	void compute(const string& audioFilename);
-
-	void outputToFile(Pool& pool, const string& outputFilename, bool outputJSON);
+	void outputToFile(Pool& pool, const string& outputFilename, const string& format);
 	
  };
 //const FreesoundExtractor::sampleRate=44100;

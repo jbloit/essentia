@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -24,7 +24,8 @@ using namespace essentia;
 using namespace standard;
 
 const char* DistributionShape::name = "DistributionShape";
-const char* DistributionShape::description = DOC("This algorithm extracts the spread (variance), skewness and kurtosis excess of an array of Reals given its central moments. These extracted features are good indicators of the shape of the distribution.\n"
+const char* DistributionShape::category = "Statistics";
+const char* DistributionShape::description = DOC("This algorithm extracts the spread (variance), skewness and kurtosis excess of an array of Reals given its central moments (see CentralMoments algorithm). These extracted features are good indicators of the shape of the distribution.\n"
 "The size of the input array must be at least 5. An exception will be thrown otherwise.\n"
 "\n"
 "References:\n"

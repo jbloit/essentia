@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -25,6 +25,7 @@ using namespace essentia;
 using namespace standard;
 
 const char* BinaryOperator::name = "BinaryOperator";
+const char* BinaryOperator::category = "Standard";
 const char* BinaryOperator::description = DOC("Given two vectors of Reals, this algorithm will perform basic arithmetical operations on it, element by element.\n"
 "Note:\n"
 "  - using this algorithm in streaming mode can cause diamond shape graphs which have not been tested with the current scheduler. There is NO GUARANTEE of its correct work for diamond shape graphs.\n"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -24,6 +24,7 @@ using namespace essentia;
 using namespace standard;
 
 const char* MaxMagFreq::name = "MaxMagFreq";
+const char* MaxMagFreq::category = "Spectral";
 const char* MaxMagFreq::description = DOC("This algorithm computes the frequency with the largest magnitude.\n"
 "Note that a spectrum must contain at least two elements otherwise an exception is thrown");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -24,14 +24,9 @@ namespace essentia {
 namespace standard {
 
 const char* Danceability::name = "Danceability";
-const char* Danceability::description = DOC(
-"Calculates the danceability vector for a given signal. The algorithm is\n"
-"derived from Detrended Fluctuation Analysis (DFA) described in [1]. The\n"
-"parameters minTau and maxTau are used to define the range of time over\n"
-"which DFA will be performed. The output of this algorithm is the\n"
-"danceability of the audio signal. These values usually range from 0 to 3\n"
-"(higher values meaning more danceable).\n"
-"Exception is thrown when minTau is greater than maxTau.\n"
+const char* Danceability::category = "Rhythm";
+const char* Danceability::description = DOC("Calculates the danceability vector for a given signal. The algorithm is derived from Detrended Fluctuation Analysis (DFA) described in [1]. The parameters minTau and maxTau are used to define the range of time over which DFA will be performed. The output of this algorithm is the danceability of the audio signal. These values usually range from 0 to 3 (higher values meaning more danceable).\n\n"
+"Exception is thrown when minTau is greater than maxTau.\n\n"
 "References:\n"
 "  [1] Streich, S. and Herrera, P., Detrended Fluctuation Analysis of Music\n"
 "  Signals: Danceability Estimation and further Semantic Characterization,\n"
@@ -154,6 +149,7 @@ void Danceability::compute() {
   for (int i=0; i<nFValues - 1; i++) {
     if (F[i+1] != 0.0) {
       danceability += log10(F[i+1] / F[i]) / log10( ((Real)_tau[i+1]+3.0) / ((Real)_tau[i]+3.0));
+      cout << "DEBUG:" << danceability << "log(F[i+1]/F[i])" << log10(F[i+1] / F[i]) << "Denominator" <<  log10( ((Real)_tau[i+1]+3.0) / ((Real)_tau[i]+3.0)) << endl;
     }
     else {
       danceability = 0.0;
@@ -181,6 +177,7 @@ namespace essentia {
 namespace streaming {
 
 const char* Danceability::name = standard::Danceability::name;
+const char* Danceability::category = standard::Danceability::category;
 const char* Danceability::description = standard::Danceability::description;
 
 

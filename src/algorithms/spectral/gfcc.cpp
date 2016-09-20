@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -25,7 +25,7 @@ using namespace essentia;
 using namespace standard;
 
 const char* GFCC::name = "GFCC";
-const char* GFCC::version = "1.0";
+const char* GFCC::category = "Spectral";
 const char* GFCC::description = DOC("This algorithm computes the equivalent of MFCCs but using a gammatone filterbank (ERBBands) scaled on an Equivalent Rectangular Bandwidth (ERB) scale. These coefficients could be called 'Gammatone Feature Cepstral Coefficients.\n"
 "\n"
 "References:\n"
@@ -35,11 +35,12 @@ const char* GFCC::description = DOC("This algorithm computes the equivalent of M
 "  pp. 4625-4628.");
 
 void GFCC::configure() {
-  _gtFilter->configure("sampleRate", parameter("sampleRate"),
-                        "numberBands", parameter("numberBands"),
-                        "lowFrequencyBound", parameter("lowFrequencyBound"),
-                        "highFrequencyBound", parameter("highFrequencyBound"),
-                        "type", "energy");
+  _gtFilter->configure("inputSize", parameter("inputSize"),
+		        "sampleRate", parameter("sampleRate"),
+                       "numberBands", parameter("numberBands"),
+                       "lowFrequencyBound", parameter("lowFrequencyBound"),
+                       "highFrequencyBound", parameter("highFrequencyBound"),
+                       "type", "energy");
   _dct->configure("inputSize", parameter("numberBands"),
                   "outputSize", parameter("numberCoefficients"));
   _logbands.resize(parameter("numberBands").toInt());

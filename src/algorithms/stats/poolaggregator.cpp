@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -28,6 +28,7 @@ using namespace essentia;
 using namespace standard;
 
 const char* PoolAggregator::name = "PoolAggregator";
+const char* PoolAggregator::category = "Statistics";
 const char* PoolAggregator::description = DOC("This algorithm performs statistical aggregation on a Pool and places the results of the aggregation into a new Pool. Supported statistical units are:\n"
   "\t'min' (minimum),\n"
   "\t'max' (maximum),\n"
@@ -205,7 +206,7 @@ void PoolAggregator::aggregateVectorRealPool(const Pool& input, Pool& output) {
     bool skipDescriptor = false;
     for (int i=1; i<dsize; ++i) {
       if ((int)data[i].size() != vsize) {
-        cout << "WARNING: PoolAggregator: not aggregating \"" << key << "\" because it has frames of different sizes" << endl;
+        E_WARNING("PoolAggregator: not aggregating \"" << key << "\" because it has frames of different sizes");
         skipDescriptor = true;
         break;
       }
@@ -436,7 +437,7 @@ void PoolAggregator::aggregateArray2DRealPool(const Pool& input, Pool& output) {
     bool skipDescriptor = false;
     for (int i=1; i<dsize; ++i) {
       if (data[i].dim1() != dim1 || data[i].dim2() != dim2) {
-        cout << "WARNING: PoolAggregator: not aggregating \"" << key << "\" because it has frames of different sizes" << endl;
+        E_WARNING("WARNING: PoolAggregator: not aggregating \"" << key << "\" because it has frames of different sizes");
         skipDescriptor = true;
         break;
       }
@@ -507,7 +508,7 @@ void PoolAggregator::aggregateArray2DRealPool(const Pool& input, Pool& output) {
     const vector<string>& stats = getStats(key);
 
     if (contains(stats, string("cov")) || contains(stats, string("icov"))) {
-      cout << "PoolAggregator: Covariance and inverse covariance for vectors of matrices are not yet implemented" << endl;
+      E_WARNING("PoolAggregator: Covariance and inverse covariance for vectors of matrices are not yet implemented");
     }
 
     // Now add all the computed statistics into the output pool

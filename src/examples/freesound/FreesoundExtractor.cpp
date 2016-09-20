@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -142,7 +142,7 @@ Pool FreesoundExtractor::computeAggregation(Pool& pool){
 
 
 void FreesoundExtractor::outputToFile(Pool& pool, const string& outputFilename,
-                                      bool outputJSON){
+                                      const string& format){
 
   cout << "Writing results to file " << outputFilename << endl;
 
@@ -150,7 +150,7 @@ void FreesoundExtractor::outputToFile(Pool& pool, const string& outputFilename,
     standard::AlgorithmFactory::create("YamlOutput",
                                        "filename", outputFilename,
                                        "doubleCheck", true,
-                                       "format", outputJSON ? "json" : "yaml");
+                                       "format", format);
   output->input("pool").set(pool);
   output->compute();
   delete output;

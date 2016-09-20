@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -27,23 +27,23 @@ namespace essentia {
 namespace streaming {
 
 const char* AudioLoader::name = "AudioLoader";
-const char* AudioLoader::description = DOC("This algorithm loads the single audio stream contained in the given audio or video file, as well as the samplerate and the number of channels. Supported formats are all those supported by the ffmpeg library, which is, virtually everything.\n"
+const char* AudioLoader::category = "Input/output";
+const char* AudioLoader::description = DOC("This algorithm loads the single audio stream contained in the given audio or video file as well as the samplerate and the number of channels. Supported formats are all those supported by the ffmpeg library including wav, aiff, flac, ogg and mp3.\n"
 "\n"
-"This algorithm will throw an exception if it hasn't been properly configured which is normally due to not specifying a valid filename.\n"
-"If using this algorithm on Windows, you must ensure that the filename is encoded as UTF-8.\n"
-"Note: ogg files are decoded in reverse phase, due to a (possible) bug in the ffmpeg library.\n"
+"This algorithm will throw an exception if it was not properly configured which is normally due to not specifying a valid filename. Invalid names comprise those with extensions different than the supported  formats and non existent files. If using this algorithm on Windows, you must ensure that the filename is encoded as UTF-8\n\n"
+"Note: ogg files are decoded in reverse phase, due to be using ffmpeg library.\n"
 "\n"
 "References:\n"
 "  [1] WAV - Wikipedia, the free encyclopedia,\n"
-"  http://en.wikipedia.org/wiki/Wav\n\n"
+"      http://en.wikipedia.org/wiki/Wav\n"
 "  [2] Audio Interchange File Format - Wikipedia, the free encyclopedia,\n"
-"  http://en.wikipedia.org/wiki/Aiff\n\n"
+"      http://en.wikipedia.org/wiki/Aiff\n"
 "  [3] Free Lossless Audio Codec - Wikipedia, the free encyclopedia,\n"
-"  http://en.wikipedia.org/wiki/Flac\n\n"
+"      http://en.wikipedia.org/wiki/Flac\n"
 "  [4] Vorbis - Wikipedia, the free encyclopedia,\n"
-"  http://en.wikipedia.org/wiki/Vorbis\n\n"
+"      http://en.wikipedia.org/wiki/Vorbis\n"
 "  [5] MP3 - Wikipedia, the free encyclopedia,\n"
-"  http://en.wikipedia.org/wiki/Mp3");
+"      http://en.wikipedia.org/wiki/Mp3");
 
 
 AudioLoader::~AudioLoader() {
@@ -122,7 +122,6 @@ void AudioLoader::openAudioFile(const string& filename) {
     E_DEBUG(EAlgorithm, "AudioLoader: converting from " << (fmt ? fmt : "unknown") << " to FLT");
     */
 
-#if HAVE_AVRESAMPLE
     E_DEBUG(EAlgorithm, "AudioLoader: using sample format conversion from libavresample");
     _convertCtxAv = avresample_alloc_context();
         
@@ -137,23 +136,9 @@ void AudioLoader::openAudioFile(const string& filename) {
         throw EssentiaException("AudioLoader: Could not initialize avresample context");
     }
 
-#elif HAVE_SWRESAMPLE
-    E_DEBUG(EAlgorithm, "AudioLoader: using sample format conversion from libswresample");
-
-    _convertCtx = swr_alloc_set_opts(_convertCtx,
-                                     layout, AV_SAMPLE_FMT_FLT, _audioCtx->sample_rate,
-                                     layout, _audioCtx->sample_fmt, _audioCtx->sample_rate,
-                                     0, NULL);
-
-    if (swr_init(_convertCtx) < 0) {
-        throw EssentiaException("AudioLoader: Could not initialize swresample context");
-    }
-
-#endif
-
     av_init_packet(&_packet);
 
-    _decodedFrame = avcodec_alloc_frame();
+    _decodedFrame = av_frame_alloc();
     if (!_decodedFrame) {
         throw EssentiaException("AudioLoader: Could not allocate audio frame");
     }
@@ -167,16 +152,10 @@ void AudioLoader::closeAudioFile() {
         return;
     }
 
-#if HAVE_AVRESAMPLE
     if (_convertCtxAv) {
         avresample_close(_convertCtxAv);
         avresample_free(&_convertCtxAv);
     }
-#elif HAVE_SWRESAMPLE
-    if (_convertCtx) {
-        swr_free(&_convertCtx);
-    }
-#endif
 
     // Close the codec
     avcodec_close(_audioCtx);
@@ -267,7 +246,9 @@ AlgorithmStatus AudioLoader::process() {
         if (!decodePacket()) break;
         copyFFmpegOutput();
     }
-
+    // neds to be freed !!
+    av_free_packet(&_packet);
+    
     return OK;
 }
 
@@ -308,43 +289,30 @@ int AudioLoader::decode_audio_frame(AVCodecContext* audioCtx,
             memcpy(output, _decodedFrame->data[0], inputPlaneSize);
         }
         else {
-#if HAVE_AVRESAMPLE
-            int samplesWrittern = avresample_convert(_convertCtxAv, 
-                                            (uint8_t**) &output, 
-                                            outputPlaneSize,
-                                            outputBufferSamples, 
-                                            (uint8_t**)_decodedFrame->data,               
-                                            inputPlaneSize, 
-                                            inputSamples);
+          int samplesWrittern = avresample_convert(_convertCtxAv, 
+                                          (uint8_t**) &output, 
+                                          outputPlaneSize,
+                                          outputBufferSamples, 
+                                          (uint8_t**)_decodedFrame->data,               
+                                          inputPlaneSize, 
+                                          inputSamples);
 
-            if (samplesWrittern < inputSamples) {
-                // TODO: there may be data remaining in the internal FIFO buffer
-                // to get this data: call avresample_convert() with NULL input 
-                // Test if this happens in practice
-                ostringstream msg;
-                msg << "AudioLoader: Incomplete format conversion (some samples missing)"
-                    << " from " << av_get_sample_fmt_name(_audioCtx->sample_fmt)
-                    << " to "   << av_get_sample_fmt_name(AV_SAMPLE_FMT_FLT);
-                throw EssentiaException(msg);
-            }
-
-#elif HAVE_SWRESAMPLE
-            if (swr_convert(_convertCtx,
-                           (uint8_t**) &output, outputBufferSamples,
-                           (const uint8_t**)_decodedFrame->data, inputSamples) < 0) {
-                ostringstream msg;
-                msg << "AudioLoader: Error converting"
-                    << " from " << av_get_sample_fmt_name(_audioCtx->sample_fmt)
-                    << " to "   << av_get_sample_fmt_name(AV_SAMPLE_FMT_FLT);
-                throw EssentiaException(msg);
-            }
-#endif
+          if (samplesWrittern < inputSamples) {
+              // TODO: there may be data remaining in the internal FIFO buffer
+              // to get this data: call avresample_convert() with NULL input 
+              // Test if this happens in practice
+              ostringstream msg;
+              msg << "AudioLoader: Incomplete format conversion (some samples missing)"
+                  << " from " << av_get_sample_fmt_name(_audioCtx->sample_fmt)
+                  << " to "   << av_get_sample_fmt_name(AV_SAMPLE_FMT_FLT);
+              throw EssentiaException(msg);
+          }
         }
         *outputSize = outputPlaneSize;
     }
     else {
-        E_DEBUG(EAlgorithm, "AudioLoader: tried to decode packet but didn't get any frame...");
-        *outputSize = 0;
+      E_DEBUG(EAlgorithm, "AudioLoader: tried to decode packet but didn't get any frame...");
+      *outputSize = 0;
     }
 
     return len;
@@ -522,23 +490,9 @@ void AudioLoader::reset() {
 namespace essentia {
 namespace standard {
 
-const char* AudioLoader::name = "AudioLoader";
-const char* AudioLoader::description = DOC("Given an audio file this algorithm loads an audio file and outputs the raw signal data, the samplerate and the number of channels. Supported formats are: wav, aiff, flac (not supported on Windows), ogg and mp3.\n"
-"\n"
-"This algorithm will throw an exception if it hasn't been properly configured which normally is due to not specifying a valid filename. Invalid names comprise those with extensions different than the supported  formats and non existent files.\n"
-"Note: ogg files are decoded in reverse phase, due to be using ffmpeg library.\n"
-"\n"
-"References:\n"
-"  [1] WAV - Wikipedia, the free encyclopedia,\n"
-"      http://en.wikipedia.org/wiki/Wav\n"
-"  [2] Audio Interchange File Format - Wikipedia, the free encyclopedia,\n"
-"      http://en.wikipedia.org/wiki/Aiff\n"
-"  [3] Free Lossless Audio Codec - Wikipedia, the free encyclopedia,\n"
-"      http://en.wikipedia.org/wiki/Flac\n"
-"  [4] Vorbis - Wikipedia, the free encyclopedia,\n"
-"      http://en.wikipedia.org/wiki/Vorbis\n"
-"  [5] MP3 - Wikipedia, the free encyclopedia,\n"
-"      http://en.wikipedia.org/wiki/Mp3");
+const char* AudioLoader::name = essentia::streaming::AudioLoader::name;
+const char* AudioLoader::category = essentia::streaming::AudioLoader::category;
+const char* AudioLoader::description = essentia::streaming::AudioLoader::description;
 
 
 void AudioLoader::createInnerNetwork() {

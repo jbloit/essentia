@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -28,6 +28,7 @@ using namespace essentia;
 using namespace essentia::streaming;
 
 const char* LowLevelSpectralExtractor::name = "LowLevelSpectralExtractor";
+const char* LowLevelSpectralExtractor::category = "Extractors";
 const char* LowLevelSpectralExtractor::description = DOC("This algorithm extracts all low level spectral features, which do not require an equal-loudness filter for their computation, from an audio signal");
 
 LowLevelSpectralExtractor::LowLevelSpectralExtractor() : _configured(false) {
@@ -242,6 +243,7 @@ namespace essentia {
 namespace standard {
 
 const char* LowLevelSpectralExtractor::name = "LowLevelSpectralExtractor";
+const char* LowLevelSpectralExtractor::category = "Extractors";
 const char* LowLevelSpectralExtractor::description = DOC("This algorithm extracts all low level spectral features from an audio signal");
 
 LowLevelSpectralExtractor::LowLevelSpectralExtractor() {

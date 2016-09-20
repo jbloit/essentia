@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+# Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
 #
 # This file is part of Essentia
 #
@@ -69,6 +69,7 @@ def create_python_algorithms(essentia):
     # FrameGenerator
     class FrameGenerator(object):
         __struct__ = { 'name': 'FrameGenerator',
+                       'category': 'Standard',
                        'inputs': [],
                        'outputs': [],
                        'parameters': [],

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013  Music Technology Group - Universitat Pompeu Fabra
+ * Copyright (C) 2006-2016  Music Technology Group - Universitat Pompeu Fabra
  *
  * This file is part of Essentia
  *
@@ -24,6 +24,7 @@ using namespace essentia;
 using namespace standard;
 
 const char* Mean::name = "Mean";
+const char* Mean::category = "Statistics";
 const char* Mean::description = DOC("This algorithm extracts the mean of an array of Reals.");
 
 void Mean::compute() {
